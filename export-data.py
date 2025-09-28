@@ -4,6 +4,21 @@ from dbfread2 import DBF
 from pathlib import Path
 
 
+def source_path(base, term):
+    path = {
+        "老人": Path(base) / f"{"企业补贴"+term}",
+        "中人": Path(base) / f"{"提高待遇"+term}",
+        "集体工": Path(base) / f"{"集体工企业补贴"+term}"
+    }
+    return path
+
+def dest_path(base,term):
+    path = Path(base) / f"{term[:4]+"年"}" / f"{str(int(term[-2:]))+"月"}"
+    paths = {"工行":path / "工行报盘", "建行":path / "建行报盘", "中行":path / "中行报盘"}
+    for _,p in paths.items():
+        if not p.exists():
+            p.mkdir(parents=True,exist_ok=True)
+    return paths
 
 def gen_path(base_dir, term,file_name):
     path= Path(base_dir) / term 
@@ -212,8 +227,15 @@ def export_data(templates):
         wb.close()
 
     app.quit()
-        
-        
+
+
+base_dir = r"D:\企业补贴\数据"
+current_term = "202510"       
+df_lr = read_dbf(source_path(base=base_dir,term=current_term)["老人"] / "bt_ltx.dbf")
+df_zr = read_dbf(source_path(base=base_dir,term=current_term)["中人"] / "bt_ltx.dbf") 
+df_jtg = read_dbf(source_path(base=base_dir,term=current_term)["集体工"] / "bt_ltx.dbf")     
+
+base_out = r"D:\企业补贴\银行报盘"
 
 templates_with_data = {
     "工商银行": [
@@ -221,30 +243,30 @@ templates_with_data = {
             "temp_path": r"D:\企业补贴\银行报盘\工商银行报盘模板.xlsx",
             "sheet": "工行跨行",
             "cell": "A2",
-            "data": conv_icbc(preprocess(
-                df = read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\老人企业补贴",term="202509",file_name="bt_ltx.dbf")),
-                benifits_type= "老人企业补贴")),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"老人企业补贴(工行报盘).xlsx"}")
+            "data": conv_icbc(
+                preprocess(df =df_lr,benifits_type= "老人企业补贴")
+            ),
+            "output": dest_path(base_out,current_term)["工行"] / f"{"老人企业补贴(工行报盘)_"+current_term+r".xlsx"}"
         },
         {
             "temp_path": r"D:\企业补贴\银行报盘\工商银行报盘模板.xlsx",
             "sheet": "工行跨行",
             "cell": "A2",
             "data": conv_icbc(preprocess(
-                df=read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\集体工企业补贴",term="202509",file_name="bt_ltx.dbf")),
+                df=df_jtg,
                 benifits_type ="集体工企业补贴")
             ),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"集体工企业补贴(工行报盘).xlsx"}")
+            "output": dest_path(base_out,current_term)["工行"] / f"{"集体工企业补贴(工行报盘)_"+current_term+r".xlsx"}"
         },
         {
             "temp_path": r"D:\企业补贴\银行报盘\工商银行报盘模板.xlsx",
             "sheet": "工行跨行",
             "cell": "A2",
             "data": conv_icbc(preprocess(
-                df=read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\中人提高待遇",term="202509",file_name="bt_ltx.dbf")),
+                df=df_zr,
                 benifits_type="中人提高待遇")
             ),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"中人提高待遇(工行报盘).xlsx"}")
+            "output": dest_path(base_out,current_term)["工行"] / f"{"中人提高待遇(工行报盘)_"+current_term+r".xlsx"}"
         },
     ],
     "建设银行": [
@@ -253,20 +275,20 @@ templates_with_data = {
             "sheet": "sheet1",
             "cell": "A2",
             "data": conv_cbc(preprocess(
-                df=read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\集体工企业补贴",term="202509",file_name="bt_ltx.dbf")),
+                df=df_jtg,
                 benifits_type ="集体工企业补贴")
             ),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"集体工企业补贴(建行报盘).xlsx"}")
+            "output": dest_path(base_out,current_term)["建行"] /f"{"集体工企业补贴(建行报盘)_"+current_term+r".xls"}"
         },
         {
             "temp_path": r"D:\企业补贴\银行报盘\建设银行报盘模板.xlsx",
             "sheet": "sheet1",
             "cell": "A2",
             "data": conv_cbc(preprocess(
-                df=read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\老人企业补贴",term="202509",file_name="bt_ltx.dbf")),
+                df=df_lr,
                 benifits_type ="老人企业补贴")
             ),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"老人企业补贴(建行报盘).xlsx"}")
+            "output": dest_path(base_out,current_term)["建行"]/ f"{"老人企业补贴(建行报盘)_"+current_term+r".xls"}"
         },
     ],
     "中国银行(油区)": [
@@ -275,20 +297,20 @@ templates_with_data = {
             "sheet": "sheet1",
             "cell": "A2",
             "data": conv_bocyt(preprocess(
-                df=read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\老人企业补贴",term="202509",file_name="bt_ltx.dbf")),
+                df=df_lr,
                 benifits_type ="老人企业补贴")
             ),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"老人企业补贴(中行油区报盘).xlsx"}")
+            "output": dest_path(base_out,current_term)["中行"] /f"{"老人企业补贴(中行油区报盘)_"+current_term+r".xlsx"}"
         },
         {
             "temp_path": r"D:\企业补贴\银行报盘\中国银行报盘模板.xlsx",
             "sheet": "sheet1",
             "cell": "A2",
             "data": conv_bocyt(preprocess(
-                df=read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\集体工企业补贴",term="202509",file_name="bt_ltx.dbf")),
+                df=df_jtg,
                 benifits_type ="集体工企业补贴")
             ),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"集体工企业补贴(中行油区报盘).xlsx"}")
+            "output": dest_path(base_out,current_term)["中行"] /f"{"集体工企业补贴(中行油区报盘)_"+current_term+r".xlsx"}"
         }
     ],
     "中国银行(南阳)": [
@@ -297,28 +319,25 @@ templates_with_data = {
             "sheet": "sheet1",
             "cell": "A2",
             "data": conv_bocny(preprocess(
-                df=read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\老人企业补贴",term="202509",file_name="bt_ltx.dbf")),
+                df=df_lr,
                 benifits_type ="老人企业补贴")
             ),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"老人企业补贴(中行南阳报盘).xlsx"}")
+            "output": dest_path(base_out,current_term)["中行"] /f"{"老人企业补贴(中行南阳报盘)_"+current_term+r".xlsx"}"
         },
         {
             "temp_path": r"D:\企业补贴\银行报盘\中国银行南阳报盘模板.xlsx",
             "sheet": "sheet1",
             "cell": "A2",
             "data": conv_bocny(preprocess(
-                df=read_dbf(file_path=gen_path(base_dir=r"D:\企业补贴\数据\集体工企业补贴",term="202509",file_name="bt_ltx.dbf")),
+                df=df_jtg,
                 benifits_type ="集体工企业补贴")
             ),
-            "output": gen_path(base_dir=r"D:\企业补贴\银行报盘",term="202509",file_name=f"{"集体工企业补贴(中行南阳报盘).xlsx"}")
+            "output":dest_path(base_out,current_term)["中行"] / f"{"集体工企业补贴(中行南阳报盘)_"+current_term+r".xlsx"}"
         }
-
     ],
 }
 
 
 if __name__ == "__main__":
-    export_data(templates_with_data["工商银行"])
-    export_data(templates_with_data["建设银行"])
-    export_data(templates_with_data["中国银行(南阳)"])
-    export_data(templates_with_data["中国银行(油区)"])
+    for _,temp in templates_with_data.items():
+        export_data(temp)
